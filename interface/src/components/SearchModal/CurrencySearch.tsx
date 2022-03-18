@@ -23,6 +23,7 @@ import { useTokenComparator } from './sorting'
 import { PaddedColumn, SearchInput, Separator } from './styleds'
 import AutoSizer from 'react-virtualized-auto-sizer'
 
+
 interface CurrencySearchProps {
   isOpen: boolean
   onDismiss: () => void
@@ -142,8 +143,8 @@ export function CurrencySearch({
       <PaddedColumn gap="14px">
         <RowBetween>
           <Text fontWeight={500} fontSize={16}>
-            Select a token
-            <QuestionHelper text="Find a token by searching for its name or symbol or by pasting its address below." />
+            {t('selectToken')}
+            <QuestionHelper text={t('selectTokenDesc')} />
           </Text>
           <CloseIcon onClick={onDismiss} />
         </RowBetween>
@@ -156,12 +157,10 @@ export function CurrencySearch({
           onChange={handleInput}
           onKeyDown={handleEnter}
         />
-        {showCommonBases && (
-          <CommonBases chainId={chainId} onSelect={handleCurrencySelect} selectedCurrency={selectedCurrency} />
-        )}
+        <CommonBases chainId={chainId} onSelect={handleCurrencySelect} selectedCurrency={selectedCurrency} />
         <RowBetween>
           <Text fontSize={14} fontWeight={500}>
-            Token Name
+            {t('tokenName')}
           </Text>
           <SortButton ascending={invertSearchOrder} toggleSortOrder={() => setInvertSearchOrder(iso => !iso)} />
         </RowBetween>

@@ -2,6 +2,7 @@ import { ChainId, JSBI, Percent, Token, WETH } from '@uniswap/sdk'
 import { AbstractConnector } from '@web3-react/abstract-connector'
 
 import { fortmatic, injected, portis, walletconnect, walletlink } from '../connectors'
+import { SRC20_TOKENS } from './src20tokens'
 
 export const ROUTER_ADDRESS = '0x1452D0533a9CdC5Be5e1817ff5C1a93299a95CE0'
 
@@ -44,7 +45,8 @@ export const CUSTOM_BASES: { [chainId in ChainId]?: { [tokenAddress: string]: To
 // used for display in the default list when adding liquidity
 export const SUGGESTED_BASES: ChainTokenList = {
   ...WETH_ONLY,
-  [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, USDC, USDT]
+  [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, USDC, USDT],
+  [ChainId.ROPSTEN]: [...WETH_ONLY[ChainId.ROPSTEN], ...SRC20_TOKENS[ChainId.ROPSTEN] ]
 }
 
 // used to construct the list of all pairs we consider by default in the frontend

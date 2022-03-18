@@ -21,6 +21,7 @@ import Identicon from '../Identicon'
 import { ButtonSecondary } from '../Button'
 import { ExternalLink as LinkIcon } from 'react-feather'
 import { ExternalLink, LinkStyledButton, TYPE } from '../../theme'
+import { useTranslation } from 'react-i18next'
 
 const HeaderRow = styled.div`
   ${({ theme }) => theme.flexRowNoWrap};
@@ -292,13 +293,14 @@ export default function AccountDetails({
     [dispatch, chainId]
   )
 
+  const {t} = useTranslation();
   return (
     <>
       <UpperSection>
         <CloseIcon onClick={toggleWalletModal}>
           <CloseColor />
         </CloseIcon>
-        <HeaderRow>Account</HeaderRow>
+        <HeaderRow>{t('account')}</HeaderRow>
         <AccountSection>
           <YourAccount>
             <InfoCard>
@@ -312,7 +314,7 @@ export default function AccountDetails({
                         ;(connector as any).close()
                       }}
                     >
-                      Disconnect
+                      {t('disconnect')}
                     </WalletAction>
                   )}
                   <WalletAction
@@ -321,7 +323,7 @@ export default function AccountDetails({
                       openOptions()
                     }}
                   >
-                    Change
+                     {t('change')}
                   </WalletAction>
                 </div>
               </AccountGroupingRow>
@@ -350,7 +352,7 @@ export default function AccountDetails({
                     <AccountControl>
                       <div>
                         <Copy toCopy={account}>
-                          <span style={{ marginLeft: '4px' }}>Copy Address</span>
+                          <span style={{ marginLeft: '4px' }}>{t('copyAddress')}</span>
                         </Copy>
                         <AddressLink
                           hasENS={!!ENSName}
@@ -358,7 +360,7 @@ export default function AccountDetails({
                           href={getEtherscanLink(chainId, ENSName, 'address')}
                         >
                           <LinkIcon size={16} />
-                          <span style={{ marginLeft: '4px' }}>View on Etherscan</span>
+                          <span style={{ marginLeft: '4px' }}>{t('viewOnEtherscan')}</span>
                         </AddressLink>
                       </div>
                     </AccountControl>
@@ -368,7 +370,7 @@ export default function AccountDetails({
                     <AccountControl>
                       <div>
                         <Copy toCopy={account}>
-                          <span style={{ marginLeft: '4px' }}>Copy Address</span>
+                          <span style={{ marginLeft: '4px' }}>{t('copyAddress')}</span>
                         </Copy>
                         <AddressLink
                           hasENS={!!ENSName}
@@ -376,7 +378,7 @@ export default function AccountDetails({
                           href={getEtherscanLink(chainId, account, 'address')}
                         >
                           <LinkIcon size={16} />
-                          <span style={{ marginLeft: '4px' }}>View on Etherscan</span>
+                          <span style={{ marginLeft: '4px' }}>{t('viewOnEtherscan')}</span>
                         </AddressLink>
                       </div>
                     </AccountControl>
@@ -390,15 +392,15 @@ export default function AccountDetails({
       {!!pendingTransactions.length || !!confirmedTransactions.length ? (
         <LowerSection>
           <AutoRow mb={'1rem'} style={{ justifyContent: 'space-between' }}>
-            <TYPE.body>Recent Transactions</TYPE.body>
-            <LinkStyledButton onClick={clearAllTransactionsCallback}>(clear all)</LinkStyledButton>
+            <TYPE.body>{t('recentTransactions')}</TYPE.body>
+            <LinkStyledButton onClick={clearAllTransactionsCallback}>({t('clearAll')})</LinkStyledButton>
           </AutoRow>
           {renderTransactions(pendingTransactions)}
           {renderTransactions(confirmedTransactions)}
         </LowerSection>
       ) : (
         <LowerSection>
-          <TYPE.body color={theme.text1}>Your transactions will appear here...</TYPE.body>
+          <TYPE.body color={theme.text1}>{t('yourTransactionsWillAppearHere')}...</TYPE.body>
         </LowerSection>
       )}
     </>

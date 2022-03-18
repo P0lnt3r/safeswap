@@ -17,6 +17,7 @@ import { ReactComponent as Close } from '../../assets/images/x.svg'
 import { injected, fortmatic, portis } from '../../connectors'
 import { OVERLAY_READY } from '../../connectors/Fortmatic'
 import { WalletConnectConnector } from '@web3-react/walletconnect-connector'
+import { useTranslation } from 'react-i18next'
 
 const CloseIcon = styled.div`
   position: absolute;
@@ -284,7 +285,7 @@ export default function WalletModal({
       )
     })
   }
-
+  const { t } = useTranslation();
   function getModalContent() {
     if (error) {
       return (
@@ -314,6 +315,7 @@ export default function WalletModal({
         />
       )
     }
+    
     return (
       <UpperSection>
         <CloseIcon onClick={toggleWalletModal}>
@@ -332,7 +334,7 @@ export default function WalletModal({
           </HeaderRow>
         ) : (
           <HeaderRow>
-            <HoverText>Connect to a wallet</HoverText>
+            <HoverText>{t('connectToAWallet')}</HoverText>
           </HeaderRow>
         )}
         <ContentWrapper>
