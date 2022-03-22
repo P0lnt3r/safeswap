@@ -200,11 +200,11 @@ export function CurrencySearch({
             </Row>
           ) : null}
           <LinkStyledButton
-            style={{ fontWeight: 500, color: theme.text2, fontSize: 16 }}
+            style={{ fontWeight: 500, color: theme.text2, fontSize: 16,width:'80px' }}
             onClick={onChangeList}
             id="currency-search-change-list-button"
           >
-            {selectedListInfo.current ? 'Change' : 'Select a list'}
+            {selectedListInfo.current ? t('change') : t('selectList')}
           </LinkStyledButton>
         </RowBetween>
       </Card>
