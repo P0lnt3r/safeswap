@@ -696,7 +696,7 @@ library SafeswapV2Library {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                hex'b88c89b18d140ea6a3e9859a9d48b10d6e69df0a80d31ab6408615293cdb5d26' // init code hash
+                hex'ad0e51aa7a058efb9eb40fd6385473f0175ee7419e8d4f91a4e0294ec12b2d13' // init code hash
             ))));
     }
 

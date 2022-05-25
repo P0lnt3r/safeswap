@@ -1,5 +1,5 @@
 import { parseBytes32String } from '@ethersproject/strings'
-import { Currency, ETHER, Token } from '@uniswap/sdk'
+import { BNB, ChainId, Currency, ETHER, Token } from '@uniswap/sdk'
 import { useMemo } from 'react'
 import { useSelectedTokenList } from '../state/lists/hooks'
 import { NEVER_RELOAD, useSingleCallResult } from '../state/multicall/hooks'
@@ -96,7 +96,15 @@ export function useToken(tokenAddress?: string): Token | undefined | null {
 }
 
 export function useCurrency(currencyId: string | undefined): Currency | null | undefined {
-  const isETH = currencyId?.toUpperCase() === 'ETH'
+  const isETH = currencyId?.toUpperCase() === 'ETH' || currencyId?.toUpperCase() === 'BNB'
   const token = useToken(isETH ? undefined : currencyId)
+  const { chainId } = useActiveWeb3React();
+  if ( chainId === ChainId.BSC || chainId === ChainId.BSC_TEST ){
+    ETHER.name = "BNB";
+    ETHER.symbol = "BNB";
+  }else{
+    ETHER.name = "Ether";
+    ETHER.symbol = "ETH";
+  }
   return isETH ? ETHER : token
 }

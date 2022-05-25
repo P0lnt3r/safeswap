@@ -4,7 +4,7 @@ import { AbstractConnector } from '@web3-react/abstract-connector'
 import { fortmatic, injected, portis, walletconnect, walletlink } from '../connectors'
 import { SRC20_TOKENS } from './src20tokens'
 
-export const ROUTER_ADDRESS = '0x1452D0533a9CdC5Be5e1817ff5C1a93299a95CE0'
+export const ROUTER_ADDRESS = '0x6476008C612dF9F8Db166844fFE39D24aEa12271'
 
 // a list of tokens by chain
 type ChainTokenList = {
@@ -23,7 +23,9 @@ const WETH_ONLY: ChainTokenList = {
   [ChainId.ROPSTEN]: [WETH[ChainId.ROPSTEN]],
   [ChainId.RINKEBY]: [WETH[ChainId.RINKEBY]],
   [ChainId.GÖRLI]: [WETH[ChainId.GÖRLI]],
-  [ChainId.KOVAN]: [WETH[ChainId.KOVAN]]
+  [ChainId.KOVAN]: [WETH[ChainId.KOVAN]],
+  [ChainId.BSC]: [WETH[ChainId.BSC]],
+  [ChainId.BSC_TEST]: [WETH[ChainId.BSC_TEST]],
 }
 
 // used to construct intermediary pairs for trading
@@ -45,8 +47,9 @@ export const CUSTOM_BASES: { [chainId in ChainId]?: { [tokenAddress: string]: To
 // used for display in the default list when adding liquidity
 export const SUGGESTED_BASES: ChainTokenList = {
   ...WETH_ONLY,
-  [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, USDC, USDT],
-  [ChainId.ROPSTEN]: [...WETH_ONLY[ChainId.ROPSTEN], ...SRC20_TOKENS[ChainId.ROPSTEN] ]
+  [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], ...SRC20_TOKENS[ChainId.MAINNET],DAI, USDC, USDT],
+  [ChainId.ROPSTEN]: [...WETH_ONLY[ChainId.ROPSTEN], ...SRC20_TOKENS[ChainId.ROPSTEN] ],
+  [ChainId.BSC_TEST]: [...WETH_ONLY[ChainId.BSC_TEST], ...SRC20_TOKENS[ChainId.BSC_TEST] ]
 }
 
 // used to construct the list of all pairs we consider by default in the frontend
