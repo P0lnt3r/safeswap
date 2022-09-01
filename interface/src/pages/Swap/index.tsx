@@ -172,9 +172,9 @@ export default function Swap() {
 
   // 没用在合约中找打路由,则访问 1inch 接口寻找聚合交易的路由
   const need1inch = useMemo( () => {
-    return (!route && userHasSpecifiedInputOutput && (currencies.OUTPUT?true:false) &&(chainId === ChainId.BSC || chainId === ChainId.MAINNET))
-           || (route && priceImpactSeverity == 4);
-  } , [route,userHasSpecifiedInputOutput,currencies,chainId]);
+    return !isExpertMode && ((!route && userHasSpecifiedInputOutput && (currencies.OUTPUT?true:false) &&(chainId === ChainId.BSC || chainId === ChainId.MAINNET))
+           || (route && priceImpactSeverity == 4));
+  } , [route,userHasSpecifiedInputOutput,currencies,chainId,isExpertMode]);
 
   const { outputTokenAmount } = use1inchInterface( need1inch,currencies, parsedAmounts );
 
@@ -355,7 +355,7 @@ export default function Swap() {
                 </ArrowWrapper>
                 {recipient === null && !showWrap && isExpertMode ? (
                   <LinkStyledButton id="add-recipient-button" onClick={() => onChangeRecipient('')}>
-                    + Add a send (optional)
+                    + {t('addRecipientop')}
                   </LinkStyledButton>
                 ) : null}
               </AutoRow>
@@ -378,7 +378,7 @@ export default function Swap() {
                     <ArrowDown size="16" color={theme.text2} />
                   </ArrowWrapper>
                   <LinkStyledButton id="remove-recipient-button" onClick={() => onChangeRecipient(null)}>
-                    - Remove send
+                    - {t('removeRecipient')}
                   </LinkStyledButton>
                 </AutoRow>
                 <AddressInputPanel id="recipient" value={recipient} onChange={onChangeRecipient} />

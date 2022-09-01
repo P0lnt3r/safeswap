@@ -204,5 +204,10 @@
   "pconfirmyouswap":"请确定是否执行本次交易",
   "ptypeconfirm":"请输入 \"confirm\" 确认继续执行本次交易",
   "transactionRejected":"交易已拒绝",
-  "swapFailed":"交易失败"
+  "swapFailed":"交易失败",
+  "addRecipientop":"新增接收者(选填)",
+  "removeRecipient":"移除接收者",
+  "recipient":"接收者",
+  "walletAddr":"钱包地址",
+  "enterWalletAddr":"输入接收者"
 }

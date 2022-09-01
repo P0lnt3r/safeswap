@@ -219,5 +219,10 @@
   "pconfirmyouswap":"Please confirm that you would like to continue with this swap",
   "ptypeconfirm":"Please type the word \"confirm\" to continue with this swap",
   "transactionRejected":"Transaction rejected",
-  "swapFailed":"Swap failed"
+  "swapFailed":"Swap failed",
+  "addRecipientop":"Add recipient(optional)",
+  "removeRecipient":"Remove recipient",
+  "recipient":"Recipient",
+  "walletAddr":"Wallet Address",
+  "enterWalletAddr":"Enter A recipient"
 }
