@@ -307,11 +307,11 @@ export default function RemoveLiquidity({
 
           addTransaction(response, {
             summary:
-              'Remove ' +
+              t('remove') + ' ' +
               parsedAmounts[Field.CURRENCY_A]?.toSignificant(3) +
               ' ' +
               currencyA?.symbol +
-              ' and ' +
+              ' ' + t('and') + ' ' +
               parsedAmounts[Field.CURRENCY_B]?.toSignificant(3) +
               ' ' +
               currencyB?.symbol
@@ -363,8 +363,8 @@ export default function RemoveLiquidity({
         </RowBetween>
 
         <TYPE.italic fontSize={12} color={theme.text2} textAlign="left" padding={'12px 0 0 0'}>
-          {`Output is estimated. If the price changes by more than ${allowedSlippage /
-            100}% your transaction will revert.`}
+          {`${t('outputEstimated2')}. ${t('ifPriceChangeMoreThan')} ${allowedSlippage /
+            100}% ${t('willRevert')}.`}
         </TYPE.italic>
       </AutoColumn>
     )
@@ -375,7 +375,7 @@ export default function RemoveLiquidity({
       <>
         <RowBetween>
           <Text color={theme.text2} fontWeight={500} fontSize={16}>
-            {'UNI ' + currencyA?.symbol + '/' + currencyB?.symbol} Burned
+            {'SAFE ' + currencyA?.symbol + '/' + currencyB?.symbol} {t('burned')}
           </Text>
           <RowFixed>
             <DoubleCurrencyLogo currency0={currencyA} currency1={currencyB} margin={true} />
@@ -388,7 +388,7 @@ export default function RemoveLiquidity({
           <>
             <RowBetween>
               <Text color={theme.text2} fontWeight={500} fontSize={16}>
-                Price
+                {t('price')}
               </Text>
               <Text fontWeight={500} fontSize={16} color={theme.text1}>
                 1 {currencyA?.symbol} = {tokenA ? pair.priceOf(tokenA).toSignificant(6) : '-'} {currencyB?.symbol}
@@ -404,16 +404,16 @@ export default function RemoveLiquidity({
         )}
         <ButtonPrimary disabled={!(approval === ApprovalState.APPROVED || signatureData !== null)} onClick={onRemove}>
           <Text fontWeight={500} fontSize={20}>
-            Confirm
+            {t('confirm')}
           </Text>
         </ButtonPrimary>
       </>
     )
   }
 
-  const pendingText = `Removing ${parsedAmounts[Field.CURRENCY_A]?.toSignificant(6)} ${
+  const pendingText = `${t('removing')} ${parsedAmounts[Field.CURRENCY_A]?.toSignificant(6)} ${
     currencyA?.symbol
-  } and ${parsedAmounts[Field.CURRENCY_B]?.toSignificant(6)} ${currencyB?.symbol}`
+  } ${t('and')} ${parsedAmounts[Field.CURRENCY_B]?.toSignificant(6)} ${currencyB?.symbol}`
 
   const liquidityPercentChangeCallback = useCallback(
     (value: number) => {
@@ -593,6 +593,7 @@ export default function RemoveLiquidity({
                   currency={pair?.liquidityToken}
                   pair={pair}
                   id="liquidity-amount"
+                  label={t('input')}
                 />
                 <ColumnCenter>
                   <ArrowDown size="16" color={theme.text2} />
@@ -604,7 +605,7 @@ export default function RemoveLiquidity({
                   onMax={() => onUserInput(Field.LIQUIDITY_PERCENT, '100')}
                   showMaxButton={!atMaxAmount}
                   currency={currencyA}
-                  label={'Output'}
+                  label={t('output')}
                   onCurrencySelect={handleSelectCurrencyA}
                   id="remove-liquidity-tokena"
                 />
@@ -618,7 +619,7 @@ export default function RemoveLiquidity({
                   onMax={() => onUserInput(Field.LIQUIDITY_PERCENT, '100')}
                   showMaxButton={!atMaxAmount}
                   currency={currencyB}
-                  label={'Output'}
+                  label={t('output')}
                   onCurrencySelect={handleSelectCurrencyB}
                   id="remove-liquidity-tokenb"
                 />
@@ -627,7 +628,7 @@ export default function RemoveLiquidity({
             {pair && (
               <div style={{ padding: '10px 20px' }}>
                 <RowBetween>
-                  Price:
+                  {t('price')}:
                   <div>
                     1 {currencyA?.symbol} = {tokenA ? pair.priceOf(tokenA).toSignificant(6) : '-'} {currencyB?.symbol}
                   </div>
@@ -661,7 +662,7 @@ export default function RemoveLiquidity({
                     fontSize={16}
                   >
                     {approval === ApprovalState.PENDING ? (
-                      <Dots>Approving</Dots>
+                      <Dots>{t('approving')}</Dots>
                     ) : approval === ApprovalState.APPROVED || signatureData !== null ? (
                       t('approved')
                     ) : (

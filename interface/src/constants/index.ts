@@ -5,6 +5,7 @@ import { fortmatic, injected, portis, walletconnect, walletlink } from '../conne
 import { SRC20_TOKENS } from './src20tokens'
 
 export const ROUTER_ADDRESS = '0x6476008C612dF9F8Db166844fFE39D24aEa12271'
+export const ONEINCH_ROUTER_ADDRESS = '0x1111111254fb6c44bac0bed2854e76f90643097d';
 
 // a list of tokens by chain
 type ChainTokenList = {
@@ -49,7 +50,8 @@ export const SUGGESTED_BASES: ChainTokenList = {
   ...WETH_ONLY,
   [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], ...SRC20_TOKENS[ChainId.MAINNET],DAI, USDC, USDT],
   [ChainId.ROPSTEN]: [...WETH_ONLY[ChainId.ROPSTEN], ...SRC20_TOKENS[ChainId.ROPSTEN] ],
-  [ChainId.BSC_TEST]: [...WETH_ONLY[ChainId.BSC_TEST], ...SRC20_TOKENS[ChainId.BSC_TEST] ]
+  [ChainId.BSC_TEST]: [...WETH_ONLY[ChainId.BSC_TEST], ...SRC20_TOKENS[ChainId.BSC_TEST] ],
+  [ChainId.BSC]: [...WETH_ONLY[ChainId.BSC], ...SRC20_TOKENS[ChainId.BSC] ]
 }
 
 // used to construct the list of all pairs we consider by default in the frontend

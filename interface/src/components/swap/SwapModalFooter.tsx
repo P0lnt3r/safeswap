@@ -1,4 +1,4 @@
-import { Trade, TradeType } from '@uniswap/sdk'
+import { Trade, TradeType , CurrencyAmount } from '@uniswap/sdk'
 import React, { useContext, useMemo, useState } from 'react'
 import { Repeat } from 'react-feather'
 import { Text } from 'rebass'
@@ -24,13 +24,15 @@ export default function SwapModalFooter({
   onConfirm,
   allowedSlippage,
   swapErrorMessage,
-  disabledConfirm
+  disabledConfirm,
+  outputTokenAmount
 }: {
-  trade: Trade
+  trade: Trade | undefined
   allowedSlippage: number
   onConfirm: () => void
   swapErrorMessage: string | undefined
-  disabledConfirm: boolean
+  disabledConfirm: boolean,
+  outputTokenAmount: CurrencyAmount,
 }) {
   const [showInverted, setShowInverted] = useState<boolean>(false)
   const theme = useContext(ThemeContext)
@@ -43,6 +45,9 @@ export default function SwapModalFooter({
   const { t } = useTranslation();
   return (
     <>
+       {
+          (trade && !outputTokenAmount) && 
+          <>
       <AutoColumn gap="0px">
         <RowBetween align="center">
           <Text fontWeight={400} fontSize={14} color={theme.text2}>
@@ -70,20 +75,20 @@ export default function SwapModalFooter({
         <RowBetween>
           <RowFixed>
             <TYPE.black fontSize={14} fontWeight={400} color={theme.text2}>
-              {trade.tradeType === TradeType.EXACT_INPUT ? t('minimumReceived') : t('maximumSold')}
+              {trade?.tradeType === TradeType.EXACT_INPUT ? t('minimumReceived') : t('maximumSold')}
             </TYPE.black>
             <QuestionHelper text={t('receivedDesc')} />
           </RowFixed>
           <RowFixed>
             <TYPE.black fontSize={14}>
-              {trade.tradeType === TradeType.EXACT_INPUT
+              {trade?.tradeType === TradeType.EXACT_INPUT
                 ? slippageAdjustedAmounts[Field.OUTPUT]?.toSignificant(4) ?? '-'
                 : slippageAdjustedAmounts[Field.INPUT]?.toSignificant(4) ?? '-'}
             </TYPE.black>
             <TYPE.black fontSize={14} marginLeft={'4px'}>
-              {trade.tradeType === TradeType.EXACT_INPUT
-                ? trade.outputAmount.currency.symbol
-                : trade.inputAmount.currency.symbol}
+              {trade?.tradeType === TradeType.EXACT_INPUT
+                ? trade?.outputAmount.currency.symbol
+                : trade?.inputAmount.currency.symbol}
             </TYPE.black>
           </RowFixed>
         </RowBetween>
@@ -104,24 +109,28 @@ export default function SwapModalFooter({
             <QuestionHelper text= {t('feeDesc')} />
           </RowFixed>
           <TYPE.black fontSize={14}>
-            {realizedLPFee ? realizedLPFee?.toSignificant(6) + ' ' + trade.inputAmount.currency.symbol : '-'}
+            {realizedLPFee ? realizedLPFee?.toSignificant(6) + ' ' + trade?.inputAmount.currency.symbol : '-'}
           </TYPE.black>
         </RowBetween>
       </AutoColumn>
+      </>
+      }          
+
 
       <AutoRow>
         <ButtonError
           onClick={onConfirm}
-          disabled={disabledConfirm}
-          error={severity > 2}
           style={{ margin: '10px 0 0 0' }}
           id="confirm-swap-or-send"
         >
           <Text fontSize={20} fontWeight={500}>
-            {severity > 2 ? t('swapAnyway') : t('confirmSwap')}
+            { trade ?
+                     severity > 2 ? outputTokenAmount ? t('confirmSwap') : t('swapAnyway') 
+                                  : t('confirmSwap')
+                    : t('confirmSwap')
+            }
           </Text>
         </ButtonError>
-
         {swapErrorMessage ? <SwapCallbackError error={swapErrorMessage} /> : null}
       </AutoRow>
     </>

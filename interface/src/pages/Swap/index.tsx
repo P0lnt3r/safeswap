@@ -1,4 +1,4 @@
-import { CurrencyAmount, JSBI, Token, Trade } from '@uniswap/sdk'
+import { ChainId, CurrencyAmount, JSBI, Token, Trade, Price } from '@uniswap/sdk'
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { ArrowDown } from 'react-feather'
 import ReactGA from 'react-ga'
@@ -44,7 +44,10 @@ import AppBody from '../AppBody'
 import { ClickableText } from '../Pool/styleds'
 import { useTranslation } from 'react-i18next'
 
+import use1inchInterface from '../../utils/use1inchInterface';
+
 export default function Swap() {
+  const {chainId} = useActiveWeb3React();
   const { t } = useTranslation();
   const loadedUrlParams = useDefaultsFromURLSearch()
 
@@ -163,8 +166,20 @@ export default function Swap() {
   )
   const noRoute = !route
 
+  const { priceImpactWithoutFee } = computeTradePriceBreakdown(trade)
+  // warnings on slippage
+  const priceImpactSeverity = warningSeverity(priceImpactWithoutFee)
+
+  // 没用在合约中找打路由,则访问 1inch 接口寻找聚合交易的路由
+  const need1inch = useMemo( () => {
+    return (!route && userHasSpecifiedInputOutput && (currencies.OUTPUT?true:false) &&(chainId === ChainId.BSC || chainId === ChainId.MAINNET))
+           || (route && priceImpactSeverity == 4);
+  } , [route,userHasSpecifiedInputOutput,currencies,chainId]);
+
+  const { outputTokenAmount } = use1inchInterface( need1inch,currencies, parsedAmounts );
+
   // check whether the user has approved the router on the input token
-  const [approval, approveCallback] = useApproveCallbackFromTrade(trade, allowedSlippage)
+  const [approval, approveCallback] = useApproveCallbackFromTrade(trade, allowedSlippage, need1inch, parsedAmount);
 
   // check if user has gone through approval process, used to show two step buttons, reset on token change
   const [approvalSubmitted, setApprovalSubmitted] = useState<boolean>(false)
@@ -179,28 +194,38 @@ export default function Swap() {
   const maxAmountInput: CurrencyAmount | undefined = maxAmountSpend(currencyBalances[Field.INPUT])
   const atMaxAmountInput = Boolean(maxAmountInput && parsedAmounts[Field.INPUT]?.equalTo(maxAmountInput))
 
+  const insufficientBalanceError = useMemo(()=>{
+    let selectTokenError  = parsedAmounts[Field.INPUT] ? false : true;
+    let insufficientError = parsedAmounts[Field.INPUT] ? maxAmountInput?.lessThan(parsedAmounts[Field.INPUT]) : false;
+    return {
+      hasError: selectTokenError || insufficientError,
+      msg: selectTokenError ? t('enterAnAmount') 
+                            : insufficientError ? parsedAmounts[Field.INPUT]?.currency.symbol + ' ' + t('insufficientBalance')
+                                                : ''
+    }
+  },[maxAmountInput,parsedAmounts]);
+
   // the callback to execute the swap
   const { callback: swapCallback, error: swapCallbackError } = useSwapCallback(
     trade,
     allowedSlippage,
     deadline,
-    recipient
+    recipient,
+    parsedAmounts,
+    outputTokenAmount
   )
 
-  const { priceImpactWithoutFee } = computeTradePriceBreakdown(trade)
-
   const handleSwap = useCallback(() => {
-    if (priceImpactWithoutFee && !confirmPriceImpactWithoutFee(priceImpactWithoutFee)) {
+    if (priceImpactWithoutFee && !need1inch && !confirmPriceImpactWithoutFee(priceImpactWithoutFee,t) ) {
       return
     }
-    if (!swapCallback) {
+    if (!swapCallback /*&& !need1inch*/) {
       return
     }
     setSwapState({ attemptingTxn: true, tradeToConfirm, showConfirm, swapErrorMessage: undefined, txHash: undefined })
     swapCallback()
       .then(hash => {
         setSwapState({ attemptingTxn: false, tradeToConfirm, showConfirm, swapErrorMessage: undefined, txHash: hash })
-
         ReactGA.event({
           category: 'Swap',
           action:
@@ -230,17 +255,14 @@ export default function Swap() {
   // errors
   const [showInverted, setShowInverted] = useState<boolean>(false)
 
-  // warnings on slippage
-  const priceImpactSeverity = warningSeverity(priceImpactWithoutFee)
-
   // show approve flow when: no error on inputs, not approved or pending, or approved in current session
   // never show if price impact is above threshold in non expert mode
   const showApproveFlow =
-    !swapInputError &&
-    (approval === ApprovalState.NOT_APPROVED ||
-      approval === ApprovalState.PENDING ||
-      (approvalSubmitted && approval === ApprovalState.APPROVED)) &&
-    !(priceImpactSeverity > 3 && !isExpertMode)
+    (!swapInputError && !insufficientBalanceError.hasError) &&
+        ( approval === ApprovalState.NOT_APPROVED ||
+          approval === ApprovalState.PENDING ||
+          (approvalSubmitted && approval === ApprovalState.APPROVED)) &&
+         !(priceImpactSeverity > 3 && !isExpertMode && !outputTokenAmount )
 
   const handleConfirmDismiss = useCallback(() => {
     setSwapState({ showConfirm: false, tradeToConfirm, attemptingTxn, swapErrorMessage, txHash })
@@ -270,6 +292,14 @@ export default function Swap() {
     onCurrencySelection
   ])
 
+  const price = useMemo(()=>{
+    if (need1inch
+      && currencies[Field.INPUT] && currencies[Field.OUTPUT] && parsedAmounts[Field.INPUT] && outputTokenAmount){
+     return new Price(currencies[Field.INPUT],currencies[Field.OUTPUT],parsedAmounts[Field.INPUT].raw,outputTokenAmount.raw);
+    }
+    return trade?.executionPrice;
+  },[currencies,parsedAmounts,need1inch,trade]);
+
   return (
     <>
       <TokenWarningModal
@@ -292,6 +322,9 @@ export default function Swap() {
             onConfirm={handleSwap}
             swapErrorMessage={swapErrorMessage}
             onDismiss={handleConfirmDismiss}
+
+            parsedAmounts={parsedAmounts}
+            outputTokenAmount={outputTokenAmount}
           />
 
           <AutoColumn gap={'md'}>
@@ -306,6 +339,7 @@ export default function Swap() {
               otherCurrency={currencies[Field.OUTPUT]}
               id="swap-currency-input"
             />
+            
 
             <AutoColumn justify="space-between">
               <AutoRow justify="space-between" style={{ padding: '0 1rem' }}>
@@ -327,7 +361,7 @@ export default function Swap() {
               </AutoRow>
             </AutoColumn>
             <CurrencyInputPanel
-              value={formattedAmounts[Field.OUTPUT]}
+              value={ ( need1inch ? outputTokenAmount?.toSignificant(6) : formattedAmounts[Field.OUTPUT] ) }
               onUserInput={handleTypeOutput}
               label={independentField === Field.INPUT && !showWrap ? `${t('to')} (${t('estimated')})` : t('to')}
               showMaxButton={false}
@@ -361,7 +395,7 @@ export default function Swap() {
                     <TradePrice
                       inputCurrency={currencies[Field.INPUT]}
                       outputCurrency={currencies[Field.OUTPUT]}
-                      price={trade?.executionPrice}
+                      price={ price }
                       showInverted={showInverted}
                       setShowInverted={setShowInverted}
                     />
@@ -389,7 +423,7 @@ export default function Swap() {
                 {wrapInputError ??
                   (wrapType === WrapType.WRAP ? 'Wrap' : wrapType === WrapType.UNWRAP ? 'Unwrap' : null)}
               </ButtonPrimary>
-            ) : noRoute && userHasSpecifiedInputOutput ? (
+            ) : noRoute && userHasSpecifiedInputOutput && !outputTokenAmount ? (
               <GreyCard style={{ textAlign: 'center' }}>
                 <TYPE.main mb="4px"> {t("insufficientLiquidityTrade")} .</TYPE.main>
               </GreyCard>
@@ -402,11 +436,11 @@ export default function Swap() {
                   altDisbaledStyle={approval === ApprovalState.PENDING} // show solid button while waiting
                 >
                   {approval === ApprovalState.PENDING ? (
-                    <Dots>Approving</Dots>
+                    <Dots>{t('approving')}</Dots>
                   ) : approvalSubmitted && approval === ApprovalState.APPROVED ? (
-                    'Approved'
+                    t('approved')
                   ) : (
-                    'Approve ' + currencies[Field.INPUT]?.symbol
+                    t('approve') + " " + currencies[Field.INPUT]?.symbol
                   )}
                 </ButtonPrimary>
                 <ButtonError
@@ -426,13 +460,14 @@ export default function Swap() {
                   width="48%"
                   id="swap-button"
                   disabled={
-                    !isValid || approval !== ApprovalState.APPROVED || (priceImpactSeverity > 3 && !isExpertMode)
+                    (!isValid || approval !== ApprovalState.APPROVED || (priceImpactSeverity > 3 && !isExpertMode && !outputTokenAmount))
                   }
-                  error={isValid && priceImpactSeverity > 2}
+                  error={isValid && priceImpactSeverity > 2 && !outputTokenAmount}
                 >
                   <Text fontSize={16} fontWeight={500}>
                     {priceImpactSeverity > 3 && !isExpertMode
-                      ? `Price Impact High`
+                      ? outputTokenAmount ? `${t('swap')}`
+                      : t('priceImpactTooHigh')
                       : `${t('swap')}${priceImpactSeverity > 2 ? t('swapAnyway') : ''}`}
                   </Text>
                 </ButtonError>
@@ -453,15 +488,17 @@ export default function Swap() {
                   }
                 }}
                 id="swap-button"
-                disabled={!isValid || (priceImpactSeverity > 3 && !isExpertMode) || !!swapCallbackError}
+                disabled={(!isValid || (priceImpactSeverity > 3 && !isExpertMode) || !!swapCallbackError) && !(outputTokenAmount&&need1inch) || insufficientBalanceError.hasError }
                 error={isValid && priceImpactSeverity > 2 && !swapCallbackError}
               >
                 <Text fontSize={20} fontWeight={500}>
-                  {swapInputError
-                    ? swapInputError
-                    : priceImpactSeverity > 3 && !isExpertMode
-                    ? t('priceImpactTooHigh')
-                    : `${t('swap')}${priceImpactSeverity > 2 ? t('swapAnyway') : ''}`}
+                  {
+                    (swapInputError || insufficientBalanceError.hasError) 
+                      ? swapInputError ? swapInputError : insufficientBalanceError.msg
+                      : (priceImpactSeverity > 3 && !isExpertMode) 
+                          ? outputTokenAmount ? `${t('swap')}`
+                                              : t('priceImpactTooHigh')
+                          : `${t('swap')}${priceImpactSeverity > 2 ? t('swapAnyway') : ''}`}
                 </Text>
               </ButtonError>
             )}
@@ -470,7 +507,10 @@ export default function Swap() {
           </BottomGrouping>
         </Wrapper>
       </AppBody>
-      <AdvancedSwapDetailsDropdown trade={trade} />
+      {
+        trade && !need1inch && 
+        <AdvancedSwapDetailsDropdown trade={trade} />
+      }
     </>
   )
 }

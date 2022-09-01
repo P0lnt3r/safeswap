@@ -1,6 +1,6 @@
 import { BigNumber } from '@ethersproject/bignumber'
 import { Contract } from '@ethersproject/contracts'
-import { JSBI, Percent, Router, SwapParameters, Trade, TradeType } from '@uniswap/sdk'
+import { JSBI, Percent, Router, SwapParameters, Trade, TradeType , CurrencyAmount, Token } from '@uniswap/sdk'
 import { useMemo } from 'react'
 import { BIPS_BASE, DEFAULT_DEADLINE_FROM_NOW, INITIAL_ALLOWED_SLIPPAGE } from '../constants'
 import { getTradeVersion, useV1TradeExchangeAddress } from '../data/V1'
@@ -12,6 +12,10 @@ import { useActiveWeb3React } from './index'
 import { useV1ExchangeContract } from './useContract'
 import useENS from './useENS'
 import { Version } from './useToggledVersion'
+
+import useOneinch from './useOneinch'
+import { Field } from '../state/swap/actions'
+import { useTranslation } from 'react-i18next'
 
 export enum SwapCallbackState {
   INVALID,
@@ -110,10 +114,14 @@ export function useSwapCallback(
   trade: Trade | undefined, // trade to execute, required
   allowedSlippage: number = INITIAL_ALLOWED_SLIPPAGE, // in bips
   deadline: number = DEFAULT_DEADLINE_FROM_NOW, // in seconds from now
-  recipientAddressOrName: string | null // the ENS name or address of the recipient of the trade, or null if swap should be returned to sender
-): { state: SwapCallbackState; callback: null | (() => Promise<string>); error: string | null } {
-  const { account, chainId, library } = useActiveWeb3React()
+  recipientAddressOrName: string | null, // the ENS name or address of the recipient of the trade, or null if swap should be returned to sender
 
+  parsedAmounts           : {[field in Field]?: CurrencyAmount},
+  outputTokenAmount       : CurrencyAmount       
+
+  ): { state: SwapCallbackState; callback: null | (() => Promise<string>); error: string | null } {
+  const { account, chainId, library } = useActiveWeb3React()
+  const { t } = useTranslation();
   const swapCalls = useSwapCallArguments(trade, allowedSlippage, deadline, recipientAddressOrName)
 
   const addTransaction = useTransactionAdder()
@@ -121,10 +129,73 @@ export function useSwapCallback(
   const { address: recipientAddress } = useENS(recipientAddressOrName)
   const recipient = recipientAddressOrName === null ? account : recipientAddress
 
+  const {
+    IOneinch,
+    oneinchContract
+  } = useOneinch();
+  const swapFragment = IOneinch.getFunction("swap");
+
   return useMemo(() => {
+    
     if (!trade || !library || !account || !chainId) {
-      return { state: SwapCallbackState.INVALID, callback: null, error: 'Missing dependencies' }
+      if ( !trade && !outputTokenAmount ){
+        return { state: SwapCallbackState.INVALID, callback: null, error: 'Missing dependencies' }
+      }
     }
+
+    if ( outputTokenAmount ){
+      return { state: SwapCallbackState.VALID, callback: async function onSwap():Promise<string>{
+        const swapParams = {    
+          fromTokenAddress  : (<Token>parsedAmounts[Field.INPUT]?.currency).address,
+          toTokenAddress    : (<Token>outputTokenAmount.currency).address,  
+          amount: parsedAmounts[Field.INPUT]?.raw,    
+          fromAddress: account,    
+          slippage: 1,    
+          disableEstimate: false,    
+          allowPartialFill: false,
+        };
+        const url = `https://api.1inch.io/v4.0/${chainId}/swap?fromTokenAddress=${swapParams.fromTokenAddress}&toTokenAddress=${swapParams.toTokenAddress}&amount=${swapParams.amount}&fromAddress=${swapParams.fromAddress}&slippage=${swapParams.slippage}`;
+        // 请求 1inch 获取调用参数
+        let rawTransaction;
+        try {
+          let response = await fetch(url, {
+              method: 'GET',
+              mode:'cors'
+          })
+          let json = await response.json();
+          rawTransaction = json.tx;
+        } catch (error) {
+          
+        }
+        const {
+          caller,
+          desc,
+          data
+        } = IOneinch.decodeFunctionData( swapFragment , rawTransaction.data );
+        console.log('caller:',caller);
+        console.log('desc:',desc);
+        console.log('data:',data);
+        console.log('gasLimit:',rawTransaction.gas);
+        console.log('gasPrice:',rawTransaction.gasPrice);
+
+        const transactionResponse = await oneinchContract.swap( caller,desc,data,{
+          gasLimit:rawTransaction.gas,
+          gasPrice:rawTransaction.gasPrice
+        });
+        const hash = transactionResponse.hash;
+        const withVersion = `(1inch)${t('swapfor')} ${parsedAmounts[Field.INPUT]?.toSignificant(6)} ${parsedAmounts[Field.INPUT]?.currency.symbol} ${t('swapfor2')} ${outputTokenAmount.toSignificant(6)} ${outputTokenAmount.currency.symbol}`;
+          const response : any = {
+            hash:hash,
+          };
+        addTransaction(response, {
+          summary: withVersion
+        })
+        return hash;
+        /******************************************************** */
+
+      } , error: null }
+    }
+
     if (!recipient) {
       if (recipientAddressOrName !== null) {
         return { state: SwapCallbackState.INVALID, callback: null, error: 'Invalid recipient' }
@@ -165,8 +236,8 @@ export function useSwapCallback(
                     console.debug('Call threw error', call, callError)
                     let errorMessage: string
                     switch (callError.reason) {
-                      case 'UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT':
-                      case 'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT':
+                      case 'SafeswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT':
+                      case 'SafeswapV2Router: EXCESSIVE_INPUT_AMOUNT':
                         errorMessage =
                           'This transaction will not succeed either due to price movement or fee on transfer. Try increasing your slippage tolerance.'
                         break
@@ -204,12 +275,12 @@ export function useSwapCallback(
           ...(value && !isZero(value) ? { value, from: account } : { from: account })
         })
           .then((response: any) => {
-            const inputSymbol = trade.inputAmount.currency.symbol
-            const outputSymbol = trade.outputAmount.currency.symbol
-            const inputAmount = trade.inputAmount.toSignificant(3)
-            const outputAmount = trade.outputAmount.toSignificant(3)
-
-            const base = `Swap ${inputAmount} ${inputSymbol} for ${outputAmount} ${outputSymbol}`
+            const inputSymbol = trade?.inputAmount.currency.symbol
+            const outputSymbol = trade?.outputAmount.currency.symbol
+            const inputAmount = trade?.inputAmount.toSignificant(3)
+            const outputAmount = trade?.outputAmount.toSignificant(3)
+            
+            const base = `${t('swapfor')} ${inputAmount} ${inputSymbol} ${t('swapfor2')} ${outputAmount} ${outputSymbol}`
             const withRecipient =
               recipient === account
                 ? base
@@ -231,15 +302,15 @@ export function useSwapCallback(
           .catch((error: any) => {
             // if the user rejected the tx, pass this along
             if (error?.code === 4001) {
-              throw new Error('Transaction rejected.')
+              throw new Error(t('transactionRejected'))
             } else {
               // otherwise, the error was unexpected and we need to convey that
               console.error(`Swap failed`, error, methodName, args, value)
-              throw new Error(`Swap failed: ${error.message}`)
+              throw new Error(`${t('swapFailed')}: ${error.message}`)
             }
           })
       },
       error: null
     }
-  }, [trade, library, account, chainId, recipient, recipientAddressOrName, swapCalls, addTransaction])
+  }, [trade, library, account, chainId, recipient, recipientAddressOrName, swapCalls, addTransaction,parsedAmounts,outputTokenAmount])
 }

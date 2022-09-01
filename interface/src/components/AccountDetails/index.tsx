@@ -229,7 +229,7 @@ export default function AccountDetails({
   const { chainId, account, connector } = useActiveWeb3React()
   const theme = useContext(ThemeContext)
   const dispatch = useDispatch<AppDispatch>()
-
+  const { t } = useTranslation();
   function formatConnectorName() {
     const { ethereum } = window
     const isMetaMask = !!(ethereum && ethereum.isMetaMask)
@@ -239,7 +239,7 @@ export default function AccountDetails({
           SUPPORTED_WALLETS[k].connector === connector && (connector !== injected || isMetaMask === (k === 'METAMASK'))
       )
       .map(k => SUPPORTED_WALLETS[k].name)[0]
-    return <WalletName>Connected with {name}</WalletName>
+    return <WalletName>{t('connectedWith')} {name}</WalletName>
   }
 
   function getStatusIcon() {
@@ -293,7 +293,6 @@ export default function AccountDetails({
     [dispatch, chainId]
   )
 
-  const {t} = useTranslation();
   return (
     <>
       <UpperSection>

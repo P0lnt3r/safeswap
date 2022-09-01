@@ -182,11 +182,11 @@ export default function AddLiquidity({
 
           addTransaction(response, {
             summary:
-              'Add ' +
+              t('add') + ' ' +
               parsedAmounts[Field.CURRENCY_A]?.toSignificant(3) +
               ' ' +
               currencies[Field.CURRENCY_A]?.symbol +
-              ' and ' +
+              ' ' + t('and') + ' ' +
               parsedAmounts[Field.CURRENCY_B]?.toSignificant(3) +
               ' ' +
               currencies[Field.CURRENCY_B]?.symbol
@@ -264,9 +264,9 @@ export default function AddLiquidity({
     )
   }
 
-  const pendingText = `Supplying ${parsedAmounts[Field.CURRENCY_A]?.toSignificant(6)} ${
+  const pendingText = `${t('supplying')} ${parsedAmounts[Field.CURRENCY_A]?.toSignificant(6)} ${
     currencies[Field.CURRENCY_A]?.symbol
-  } and ${parsedAmounts[Field.CURRENCY_B]?.toSignificant(6)} ${currencies[Field.CURRENCY_B]?.symbol}`
+  } ${t('and')} ${parsedAmounts[Field.CURRENCY_B]?.toSignificant(6)} ${currencies[Field.CURRENCY_B]?.symbol}`
 
   const handleCurrencyASelect = useCallback(
     (currencyA: Currency) => {
@@ -351,6 +351,7 @@ export default function AddLiquidity({
               onCurrencySelect={handleCurrencyASelect}
               showMaxButton={!atMaxAmounts[Field.CURRENCY_A]}
               currency={currencies[Field.CURRENCY_A]}
+              label={t('deposit')}
               id="add-liquidity-input-tokena"
               showCommonBases
             />
@@ -366,6 +367,7 @@ export default function AddLiquidity({
               }}
               showMaxButton={!atMaxAmounts[Field.CURRENCY_B]}
               currency={currencies[Field.CURRENCY_B]}
+              label={t('deposit')}
               id="add-liquidity-input-tokenb"
               showCommonBases
             />

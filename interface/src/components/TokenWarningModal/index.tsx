@@ -12,6 +12,8 @@ import { AutoRow, RowBetween } from '../Row'
 import { AutoColumn } from '../Column'
 import { AlertTriangle } from 'react-feather'
 import { ButtonError } from '../Button'
+import { useTranslation } from 'react-i18next'
+
 
 const Wrapper = styled.div<{ error: boolean }>`
   background: ${({ theme }) => transparentize(0.6, theme.bg3)};
@@ -37,6 +39,7 @@ interface TokenWarningCardProps {
   token?: Token
 }
 
+
 function TokenWarningCard({ token }: TokenWarningCardProps) {
   const { chainId } = useActiveWeb3React()
 
@@ -44,7 +47,7 @@ function TokenWarningCard({ token }: TokenWarningCardProps) {
   const tokenName = token?.name?.toLowerCase() ?? ''
 
   const allTokens = useAllTokens()
-
+  const { t } = useTranslation();
   const duplicateNameOrSymbol = useMemo(() => {
     if (!token || !chainId) return false
 
@@ -58,7 +61,8 @@ function TokenWarningCard({ token }: TokenWarningCardProps) {
   }, [token, chainId, allTokens, tokenSymbol, tokenName])
 
   if (!token) return null
-
+  
+  
   return (
     <Wrapper error={duplicateNameOrSymbol}>
       <AutoRow gap="6px">
@@ -73,7 +77,7 @@ function TokenWarningCard({ token }: TokenWarningCardProps) {
               : token.name || token.symbol}{' '}
           </TYPE.main>
           <ExternalLink style={{ fontWeight: 400 }} href={getEtherscanLink(chainId, token.address, 'token')}>
-            <TYPE.blue title={token.address}>{shortenAddress(token.address)} (View on Etherscan)</TYPE.blue>
+            <TYPE.blue title={token.address}>{shortenAddress(token.address)} ({t('viewOnEtherscan')})</TYPE.blue>
           </ExternalLink>
         </AutoColumn>
       </AutoRow>

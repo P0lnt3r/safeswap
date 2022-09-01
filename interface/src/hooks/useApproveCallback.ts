@@ -1,8 +1,8 @@
 import { MaxUint256 } from '@ethersproject/constants'
 import { TransactionResponse } from '@ethersproject/providers'
-import { Trade, TokenAmount, CurrencyAmount, ETHER } from '@uniswap/sdk'
+import { Trade, TokenAmount, CurrencyAmount, ETHER, Currency } from '@uniswap/sdk'
 import { useCallback, useMemo } from 'react'
-import { ROUTER_ADDRESS } from '../constants'
+import { ROUTER_ADDRESS , ONEINCH_ROUTER_ADDRESS } from '../constants'
 import { useTokenAllowance } from '../data/Allowances'
 import { getTradeVersion, useV1TradeExchangeAddress } from '../data/V1'
 import { Field } from '../state/swap/actions'
@@ -12,6 +12,7 @@ import { calculateGasMargin } from '../utils'
 import { useTokenContract } from './useContract'
 import { useActiveWeb3React } from './index'
 import { Version } from './useToggledVersion'
+import { useTranslation } from 'react-i18next'
 
 export enum ApprovalState {
   UNKNOWN,
@@ -47,7 +48,7 @@ export function useApproveCallback(
 
   const tokenContract = useTokenContract(token?.address)
   const addTransaction = useTransactionAdder()
-
+  const {t} = useTranslation();
   const approve = useCallback(async (): Promise<void> => {
     if (approvalState !== ApprovalState.NOT_APPROVED) {
       console.error('approve was called unnecessarily')
@@ -79,14 +80,15 @@ export function useApproveCallback(
       useExact = true
       return tokenContract.estimateGas.approve(spender, amountToApprove.raw.toString())
     })
-
+    
+   
     return tokenContract
       .approve(spender, useExact ? amountToApprove.raw.toString() : MaxUint256, {
         gasLimit: calculateGasMargin(estimatedGas)
       })
       .then((response: TransactionResponse) => {
         addTransaction(response, {
-          summary: 'Approve ' + amountToApprove.currency.symbol,
+          summary:  t('approve') + " " + amountToApprove.currency.symbol,
           approval: { tokenAddress: token.address, spender: spender }
         })
       })
@@ -100,12 +102,14 @@ export function useApproveCallback(
 }
 
 // wraps useApproveCallback in the context of a swap
-export function useApproveCallbackFromTrade(trade?: Trade, allowedSlippage = 0) {
+export function useApproveCallbackFromTrade(trade?: Trade, allowedSlippage = 0, need1inch:boolean = false, currencyInput?:CurrencyAmount) {
   const amountToApprove = useMemo(
     () => (trade ? computeSlippageAdjustedAmounts(trade, allowedSlippage)[Field.INPUT] : undefined),
     [trade, allowedSlippage]
   )
   const tradeIsV1 = getTradeVersion(trade) === Version.v1
   const v1ExchangeAddress = useV1TradeExchangeAddress(trade)
-  return useApproveCallback(amountToApprove, tradeIsV1 ? v1ExchangeAddress : ROUTER_ADDRESS)
+  return useApproveCallback(
+    amountToApprove ? amountToApprove : need1inch ? currencyInput : undefined, 
+    tradeIsV1 ? v1ExchangeAddress : need1inch ? ONEINCH_ROUTER_ADDRESS : ROUTER_ADDRESS)
 }

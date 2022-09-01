@@ -328,7 +328,7 @@ export default function WalletModal({
                 setWalletView(WALLET_VIEWS.ACCOUNT)
               }}
             >
-              Back
+              {t('back')}
             </HoverText>
           </HeaderRow>
         ) : (
@@ -347,7 +347,7 @@ export default function WalletModal({
           ) : (
             <OptionGrid>{getOptions()}</OptionGrid>
           )}
-          {walletView !== WALLET_VIEWS.PENDING && (
+          { /*walletView !== WALLET_VIEWS.PENDING*/ false && (
             <Blurb>
               <span>New to Ethereum? &nbsp;</span>{' '}
               <ExternalLink href="https://ethereum.org/wallets/">Learn more about wallets</ExternalLink>

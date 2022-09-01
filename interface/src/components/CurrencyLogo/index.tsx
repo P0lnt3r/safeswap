@@ -9,9 +9,15 @@ import { WrappedTokenInfo } from '../../state/lists/hooks'
 import Logo from '../Logo'
 import { SRC20_LOGOS } from '../../constants/src20tokens'
 import { useActiveWeb3React } from '../../hooks/index'
+import internal from 'stream'
 
-const getTokenLogoURL = (address: string) =>
-  `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${address}/logo.png`
+const getTokenLogoURL = (address: string,chainId?:number) => {
+  if ( chainId == 56  ){
+    return `https://assets-cdn.trustwallet.com/blockchains/smartchain/assets/${address}/logo.png`;
+  }
+  return `https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${address}/logo.png`;
+}
+  
 
 const StyledEthereumLogo = styled.img<{ size: string }>`
   width: ${({ size }) => size};
@@ -40,17 +46,15 @@ export default function CurrencyLogo({
     if (currency === ETHER) return []
     if (currency instanceof Token) {
       if (currency instanceof WrappedTokenInfo) {
-        return [...uriLocations, getTokenLogoURL(currency.address)]
+        return [...uriLocations, getTokenLogoURL(currency.address,chainId)]
       }
       if ( SRC20_LOGOS[currency.symbol.toUpperCase()] ){
         return [SRC20_LOGOS[currency.symbol.toUpperCase()]]
       }
-      console.log('CurrencyLogo');
-      console.log(currency);
-      return [getTokenLogoURL(currency.address)]
+      return [getTokenLogoURL(currency.address,chainId)]
     }
     return []
-  }, [currency, uriLocations])
+  }, [currency, uriLocations,chainId])
 
   if (currency === ETHER) {
     if ( chainId === ChainId.BSC || chainId === ChainId.BSC_TEST ){

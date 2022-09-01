@@ -105,35 +105,36 @@ export function useV1Trade(
   exactAmount?: CurrencyAmount
 ): Trade | undefined {
   // get the mock v1 pairs
-  const inputPair = useMockV1Pair(inputCurrency)
-  const outputPair = useMockV1Pair(outputCurrency)
+  // const inputPair = useMockV1Pair(inputCurrency)
+  // const outputPair = useMockV1Pair(outputCurrency)
 
-  const inputIsETH = inputCurrency === ETHER
-  const outputIsETH = outputCurrency === ETHER
+  // const inputIsETH = inputCurrency === ETHER
+  // const outputIsETH = outputCurrency === ETHER
 
-  // construct a direct or through ETH v1 route
-  let pairs: Pair[] = []
-  if (inputIsETH && outputPair) {
-    pairs = [outputPair]
-  } else if (outputIsETH && inputPair) {
-    pairs = [inputPair]
-  }
-  // if neither are ETH, it's token-to-token (if they both exist)
-  else if (inputPair && outputPair) {
-    pairs = [inputPair, outputPair]
-  }
+  // // construct a direct or through ETH v1 route
+  // let pairs: Pair[] = []
+  // if (inputIsETH && outputPair) {
+  //   pairs = [outputPair]
+  // } else if (outputIsETH && inputPair) {
+  //   pairs = [inputPair]
+  // }
+  // // if neither are ETH, it's token-to-token (if they both exist)
+  // else if (inputPair && outputPair) {
+  //   pairs = [inputPair, outputPair]
+  // }
 
-  const route = inputCurrency && pairs && pairs.length > 0 && new Route(pairs, inputCurrency, outputCurrency)
-  let v1Trade: Trade | undefined
-  try {
-    v1Trade =
-      route && exactAmount
-        ? new Trade(route, exactAmount, isExactIn ? TradeType.EXACT_INPUT : TradeType.EXACT_OUTPUT)
-        : undefined
-  } catch (error) {
-    console.debug('Failed to create V1 trade', error)
-  }
-  return v1Trade
+  // const route = inputCurrency && pairs && pairs.length > 0 && new Route(pairs, inputCurrency, outputCurrency)
+  // let v1Trade: Trade | undefined
+  // try {
+  //   v1Trade =
+  //     route && exactAmount
+  //       ? new Trade(route, exactAmount, isExactIn ? TradeType.EXACT_INPUT : TradeType.EXACT_OUTPUT)
+  //       : undefined
+  // } catch (error) {
+  //   console.debug('Failed to create V1 trade', error)
+  // }
+  // return v1Trade
+  return undefined;
 }
 
 export function getTradeVersion(trade?: Trade): Version | undefined {
