@@ -1,4 +1,4 @@
-import { ChainId, CurrencyAmount, JSBI, Token, Trade, Price } from '@uniswap/sdk'
+import { ChainId, CurrencyAmount, JSBI, Token, Trade, Price , ETHER } from '@uniswap/sdk'
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { ArrowDown } from 'react-feather'
 import ReactGA from 'react-ga'
@@ -56,6 +56,7 @@ export default function Swap() {
     useCurrency(loadedUrlParams?.inputCurrencyId),
     useCurrency(loadedUrlParams?.outputCurrencyId)
   ]
+
   const [dismissTokenWarning, setDismissTokenWarning] = useState<boolean>(false)
   const urlLoadedTokens: Token[] = useMemo(
     () => [loadedInputCurrency, loadedOutputCurrency]?.filter((c): c is Token => c instanceof Token) ?? [],
@@ -173,9 +174,9 @@ export default function Swap() {
   // 没用在合约中找打路由,则访问 1inch 接口寻找聚合交易的路由
   const need1inch = useMemo( () => {
     return !isExpertMode && ((!route && userHasSpecifiedInputOutput && (currencies.OUTPUT?true:false) &&(chainId === ChainId.BSC || chainId === ChainId.MAINNET))
-           || (route && priceImpactSeverity == 4));
+           || (route && priceImpactSeverity >= 3)) && !showWrap /*&& !(ETHER==currencies.INPUT || ETHER==currencies.OUTPUT)*/ && parsedAmounts[Field.INPUT] != undefined;
   } , [route,userHasSpecifiedInputOutput,currencies,chainId,isExpertMode]);
-
+  
   const { outputTokenAmount } = use1inchInterface( need1inch,currencies, parsedAmounts );
 
   // check whether the user has approved the router on the input token
@@ -300,6 +301,8 @@ export default function Swap() {
     return trade?.executionPrice;
   },[currencies,parsedAmounts,need1inch,trade]);
 
+  console.log('# swap - #',parsedAmounts[Field.INPUT]);
+
   return (
     <>
       <TokenWarningModal
@@ -361,7 +364,7 @@ export default function Swap() {
               </AutoRow>
             </AutoColumn>
             <CurrencyInputPanel
-              value={ ( need1inch ? outputTokenAmount?.toSignificant(6) : formattedAmounts[Field.OUTPUT] ) }
+              value={ formattedAmounts[Field.INPUT] && ( need1inch ? outputTokenAmount?.toSignificant(6) : formattedAmounts[Field.OUTPUT] ) }
               onUserInput={handleTypeOutput}
               label={independentField === Field.INPUT && !showWrap ? `${t('to')} (${t('estimated')})` : t('to')}
               showMaxButton={false}
@@ -423,7 +426,7 @@ export default function Swap() {
                 {wrapInputError ??
                   (wrapType === WrapType.WRAP ? 'Wrap' : wrapType === WrapType.UNWRAP ? 'Unwrap' : null)}
               </ButtonPrimary>
-            ) : noRoute && userHasSpecifiedInputOutput && !outputTokenAmount ? (
+            ) : noRoute && userHasSpecifiedInputOutput && !outputTokenAmount && parsedAmounts[Field.INPUT] != undefined ? (
               <GreyCard style={{ textAlign: 'center' }}>
                 <TYPE.main mb="4px"> {t("insufficientLiquidityTrade")} .</TYPE.main>
               </GreyCard>
@@ -468,7 +471,7 @@ export default function Swap() {
                     {priceImpactSeverity > 3 && !isExpertMode
                       ? outputTokenAmount ? `${t('swap')}`
                       : t('priceImpactTooHigh')
-                      : `${t('swap')}${priceImpactSeverity > 2 ? t('swapAnyway') : ''}`}
+                      : `${t('swap')}${priceImpactSeverity > 3 ? t('swapAnyway') : ''}`}
                   </Text>
                 </ButtonError>
               </RowBetween>
@@ -498,7 +501,7 @@ export default function Swap() {
                       : (priceImpactSeverity > 3 && !isExpertMode) 
                           ? outputTokenAmount ? `${t('swap')}`
                                               : t('priceImpactTooHigh')
-                          : `${t('swap')}${priceImpactSeverity > 2 ? t('swapAnyway') : ''}`}
+                          : `${t('swap')}${priceImpactSeverity > 3 ? t('swapAnyway') : ''}`}
                 </Text>
               </ButtonError>
             )}

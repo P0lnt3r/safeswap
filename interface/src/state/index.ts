@@ -12,7 +12,7 @@ import multicall from './multicall/reducer'
 
 import { updateVersion } from './user/actions'
 
-const PERSISTED_KEYS: string[] = ['user','transactions', 'lists',/*'swap'*/]
+const PERSISTED_KEYS: string[] = [ 'user','transactions'/*,'lists'*/,'swap']
 
 const store = configureStore({
   reducer: {
@@ -29,7 +29,7 @@ const store = configureStore({
   preloadedState: load({ states: PERSISTED_KEYS })
 })
 
-store.dispatch(updateVersion())
+// store.dispatch(updateVersion())
 
 export default store
 

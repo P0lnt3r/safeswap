@@ -45,12 +45,12 @@ export default function Updater() {
       library.removeListener('block', blockNumberCallback)
     }
   }, [dispatch, chainId, library, blockNumberCallback, windowVisible])
-
-  const debouncedState = useDebounce(state, 100)
+  const debouncedState = useDebounce(state, 10)
 
   useEffect(() => {
     if (!debouncedState.chainId || !debouncedState.blockNumber || !windowVisible) return
-    dispatch(updateBlockNumber({ chainId: debouncedState.chainId, blockNumber: debouncedState.blockNumber }))
+    console.log( new Date() + "library.[event:onblock] - updateblockNumber:", debouncedState.blockNumber);
+    dispatch(updateBlockNumber({ chainId: debouncedState.chainId, blockNumber: debouncedState.blockNumber-5}))
   }, [windowVisible, dispatch, debouncedState.blockNumber, debouncedState.chainId])
 
   return null

@@ -36,14 +36,14 @@ const initialState: ListsState = {
       memo[listUrl] = NEW_LIST_STATE
       return memo
     }, {}),
-    [DEFAULT_TOKEN_LIST_URL]: {
-      error: null,
-      current: UNISWAP_DEFAULT_LIST,
-      loadingRequestId: null,
-      pendingUpdate: null
-    }
+    // [DEFAULT_TOKEN_LIST_URL]: {
+    //   error: null,
+    //   current: UNISWAP_DEFAULT_LIST,
+    //   loadingRequestId: null,
+    //   pendingUpdate: null
+    // }
   },
-  selectedListUrl: undefined
+  selectedListUrl: ""
 }
 
 export default createReducer(initialState, builder =>
@@ -60,9 +60,9 @@ export default createReducer(initialState, builder =>
     .addCase(fetchTokenList.fulfilled, (state, { payload: { requestId, tokenList, url } }) => {
       const current = state.byUrl[url]?.current
       const loadingRequestId = state.byUrl[url]?.loadingRequestId
-
       // no-op if update does nothing
       if (current) {
+        return;
         const upgradeType = getVersionUpgrade(current.version, tokenList.version)
         if (upgradeType === VersionUpgrade.NONE) return
         if (loadingRequestId === null || loadingRequestId === requestId) {

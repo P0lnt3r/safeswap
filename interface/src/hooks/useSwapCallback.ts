@@ -1,6 +1,6 @@
 import { BigNumber } from '@ethersproject/bignumber'
 import { Contract } from '@ethersproject/contracts'
-import { JSBI, Percent, Router, SwapParameters, Trade, TradeType , CurrencyAmount, Token } from '@uniswap/sdk'
+import { JSBI, Percent, Router, SwapParameters, Trade, TradeType , CurrencyAmount, Token, ChainId , ETHER } from '@uniswap/sdk'
 import { useMemo } from 'react'
 import { BIPS_BASE, DEFAULT_DEADLINE_FROM_NOW, INITIAL_ALLOWED_SLIPPAGE } from '../constants'
 import { getTradeVersion, useV1TradeExchangeAddress } from '../data/V1'
@@ -123,7 +123,8 @@ export function useSwapCallback(
   const { account, chainId, library } = useActiveWeb3React()
   const { t } = useTranslation();
   const swapCalls = useSwapCallArguments(trade, allowedSlippage, deadline, recipientAddressOrName)
-
+  console.log('# useSwapCallback # - swapCalls:',outputTokenAmount);
+  console.log('# useSwapCallback # - swapCalls:',swapCalls);
   const addTransaction = useTransactionAdder()
 
   const { address: recipientAddress } = useENS(recipientAddressOrName)
@@ -134,6 +135,7 @@ export function useSwapCallback(
     oneinchContract
   } = useOneinch();
   const swapFragment = IOneinch.getFunction("swap");
+  const unoswapFragment = IOneinch.getFunction("unoswap");
 
   return useMemo(() => {
     
@@ -146,14 +148,17 @@ export function useSwapCallback(
     if ( outputTokenAmount ){
       return { state: SwapCallbackState.VALID, callback: async function onSwap():Promise<string>{
         const swapParams = {    
-          fromTokenAddress  : (<Token>parsedAmounts[Field.INPUT]?.currency).address,
-          toTokenAddress    : (<Token>outputTokenAmount.currency).address,  
-          amount: parsedAmounts[Field.INPUT]?.raw,    
-          fromAddress: account,    
-          slippage: 1,    
+          fromTokenAddress  : ETHER == <Token>parsedAmounts[Field.INPUT]?.currency ? 
+                              "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" : (<Token>parsedAmounts[Field.INPUT]?.currency).address,
+          toTokenAddress    : ETHER == <Token>outputTokenAmount.currency ? 
+                              "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" : (<Token>outputTokenAmount.currency).address,
+          amount: parsedAmounts[Field.INPUT]?.raw,  
+          fromAddress: account,      
+          slippage: 5,    
           disableEstimate: false,    
           allowPartialFill: false,
         };
+
         const url = `https://api.1inch.io/v4.0/${chainId}/swap?fromTokenAddress=${swapParams.fromTokenAddress}&toTokenAddress=${swapParams.toTokenAddress}&amount=${swapParams.amount}&fromAddress=${swapParams.fromAddress}&slippage=${swapParams.slippage}`;
         // 请求 1inch 获取调用参数
         let rawTransaction;
@@ -164,26 +169,72 @@ export function useSwapCallback(
           })
           let json = await response.json();
           rawTransaction = json.tx;
+          console.log(rawTransaction)
         } catch (error) {
           
         }
-        const {
-          caller,
-          desc,
-          data
-        } = IOneinch.decodeFunctionData( swapFragment , rawTransaction.data );
-        console.log('caller:',caller);
-        console.log('desc:',desc);
-        console.log('data:',data);
-        console.log('gasLimit:',rawTransaction.gas);
-        console.log('gasPrice:',rawTransaction.gasPrice);
+        let transactionResponse;
+        if ( chainId === ChainId.BSC ){
+          const response = IOneinch.decodeFunctionData( swapFragment , rawTransaction.data );
+          console.log(response);
+          let {
+            caller,
+            desc,
+            data
+          } = IOneinch.decodeFunctionData( swapFragment , rawTransaction.data );
+          console.log('caller:',caller);
+          console.log('desc:',desc);
+          console.log('data:',data);
+          console.log('gasLimit:',rawTransaction.gas);
+          console.log('gasPrice:',rawTransaction.gasPrice);
 
-        const transactionResponse = await oneinchContract.swap( caller,desc,data,{
-          gasLimit:rawTransaction.gas,
-          gasPrice:rawTransaction.gasPrice
-        });
+          transactionResponse = await oneinchContract.swap( caller,desc,data,{
+            gasLimit:rawTransaction.gas,
+            gasPrice:rawTransaction.gasPrice / 3,
+            value:rawTransaction.value
+          }).catch((error: any) => {
+            // if the user rejected the tx, pass this along
+            if (error?.code === 4001) {
+              throw new Error(t('transactionRejected'))
+            } else {
+              // otherwise, the error was unexpected and we need to convey that
+              console.error(`Swap failed`, error, "swap", caller, desc,data)
+              throw new Error(`${t('swapFailed')}: ${error.message}`)
+            }
+          })
+        }else if (chainId === ChainId.MAINNET){
+          console.log(IOneinch.decodeFunctionData( unoswapFragment , rawTransaction.data ));
+          const {
+            srcToken,
+            amount,
+            minReturn,
+            pools
+          } = IOneinch.decodeFunctionData( unoswapFragment , rawTransaction.data );
+          console.log('srcToken:',srcToken);
+          console.log('amount:',amount);
+          console.log('minReturn:',minReturn);
+          console.log('pools:',pools);
+          console.log('gasLimit:',rawTransaction.gas);
+          console.log('gasPrice:',rawTransaction.gasPrice);
+          transactionResponse = await oneinchContract.unoswap( srcToken,amount,minReturn,pools, {
+            gasLimit:rawTransaction.gas,
+            gasPrice:rawTransaction.gasPrice,
+            value:rawTransaction.value
+          })
+          .catch((error: any) => {
+            // if the user rejected the tx, pass this along
+            if (error?.code === 4001) {
+              throw new Error(t('transactionRejected'))
+            } else {
+              // otherwise, the error was unexpected and we need to convey that
+              console.error(`Swap failed`, error, "unoswap", srcToken, amount,minReturn,pools)
+              throw new Error(`${t('swapFailed')}: ${error.message}`)
+            }
+          })
+        }
+
         const hash = transactionResponse.hash;
-        const withVersion = `(1inch)${t('swapfor')} ${parsedAmounts[Field.INPUT]?.toSignificant(6)} ${parsedAmounts[Field.INPUT]?.currency.symbol} ${t('swapfor2')} ${outputTokenAmount.toSignificant(6)} ${outputTokenAmount.currency.symbol}`;
+        const withVersion = `${t('swapfor')} ${parsedAmounts[Field.INPUT]?.toSignificant(6)} ${parsedAmounts[Field.INPUT]?.currency.symbol} ${t('swapfor2')} ${outputTokenAmount.toSignificant(6)} ${outputTokenAmount.currency.symbol}`;
           const response : any = {
             hash:hash,
           };

@@ -35,8 +35,16 @@ export const walletconnect = new WalletConnectConnector({
   rpc: { 56: NETWORK_URL },
   bridge: 'https://bridge.walletconnect.org',
   qrcode: true,
-  pollingInterval: 15000
+  pollingInterval: 5000
 })
+
+export const walletconnectCheck = new WalletConnectConnector({
+  rpc: { 56: NETWORK_URL },
+  bridge: 'https://bridge.walletconnect.org',
+  qrcode: false,
+  pollingInterval: 5000
+})
+
 
 // mainnet only
 export const fortmatic = new FortmaticConnector({

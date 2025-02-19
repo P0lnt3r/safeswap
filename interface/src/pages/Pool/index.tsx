@@ -1,8 +1,9 @@
 import React, { useContext, useMemo } from 'react'
 import { ThemeContext } from 'styled-components'
-import { Pair } from '@uniswap/sdk'
+import { Pair,Token } from '@uniswap/sdk'
 import { Link } from 'react-router-dom'
 import { SwapPoolTabs } from '../../components/NavigationTabs'
+import { useDerivedSwapInfo } from '../../state/swap/hooks'
 
 import Question from '../../components/QuestionHelper'
 import FullPositionCard from '../../components/PositionCard'
@@ -56,14 +57,22 @@ export default function Pool() {
 
   const allV2PairsWithLiquidity = v2Pairs.map(([, pair]) => pair).filter((v2Pair): v2Pair is Pair => Boolean(v2Pair))
 
-  const hasV1Liquidity = useUserHasLiquidityInAllTokens()
+  // const hasV1Liquidity = useUserHasLiquidityInAllTokens()
+  const hasV1Liquidity = false;
+
+  const { currencies } = useDerivedSwapInfo();
+  const token0 = currencies.INPUT as Token ;
+  const token1 = currencies.OUTPUT as Token;
+  const addPoolPath = token0 && token1 ? 
+                        "/add/" + token0.address + "/" + token1.address
+                        :"/add/ETH";  
 
   return (
     <>
       <AppBody>
         <SwapPoolTabs active={'pool'} />
         <AutoColumn gap="lg" justify="center">
-          <ButtonPrimary id="join-pool-button" as={Link} style={{ padding: 16 }} to="/add/ETH">
+          <ButtonPrimary id="join-pool-button" as={Link} style={{ padding: 16 }} to={addPoolPath}>
             <Text fontWeight={500} fontSize={20}>
               {t('addLiquidity')}
             </Text>

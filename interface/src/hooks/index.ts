@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { isMobile } from 'react-device-detect'
 import { injected } from '../connectors'
 import { NetworkContextName } from '../constants'
+import { walletconnect,walletconnectCheck } from '../connectors'
 
 export function useActiveWeb3React(): Web3ReactContextInterface<Web3Provider> & { chainId?: ChainId } {
   const context = useWeb3ReactCore<Web3Provider>()
@@ -18,6 +19,15 @@ export function useEagerConnect() {
   const [tried, setTried] = useState(false)
 
   useEffect(() => {
+
+    walletconnectCheck.activate().then( ( update )=>{
+      activate(walletconnect, undefined, true).catch(() => {
+        setTried(true)
+      })
+    }).catch(err=>{
+      console.log("#### walletconnectCheck",err);
+    })
+
     injected.isAuthorized().then(isAuthorized => {
       if (isAuthorized) {
         activate(injected, undefined, true).catch(() => {

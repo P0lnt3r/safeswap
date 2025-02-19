@@ -16,7 +16,7 @@ export interface SwapState {
 
 const initialState: SwapState = {
   independentField: Field.INPUT,
-  typedValue: '',
+  typedValue: '1',
   [Field.INPUT]: {
     currencyId: ''
   },
@@ -52,13 +52,15 @@ export default createReducer<SwapState>(initialState, builder =>
           ...state,
           independentField: state.independentField === Field.INPUT ? Field.OUTPUT : Field.INPUT,
           [field]: { currencyId: currencyId },
-          [otherField]: { currencyId: state[field].currencyId }
+          [otherField]: { currencyId: state[field].currencyId },
+          firstLoad:false
         }
       } else {
         // the normal case
         return {
           ...state,
-          [field]: { currencyId: currencyId }
+          [field]: { currencyId: currencyId },
+          firstLoad:false
         }
       }
     })

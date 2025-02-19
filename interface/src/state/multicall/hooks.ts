@@ -250,6 +250,8 @@ export function useSingleCallResult(
   const latestBlockNumber = useBlockNumber()
 
   return useMemo(() => {
-    return toCallState(result, contract?.interface, fragment, latestBlockNumber)
+    // console.log('@ Update Single Result @ - latestBlockNumber:' , latestBlockNumber);
+    // console.log('@ Update Single Result @ - result.number:' , result?.blockNumber);
+    return toCallState(result, contract?.interface, fragment, latestBlockNumber );
   }, [result, contract, fragment, latestBlockNumber])
 }

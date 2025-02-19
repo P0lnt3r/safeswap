@@ -19,6 +19,9 @@ import useToggledVersion from '../../hooks/useToggledVersion'
 import { useUserSlippageTolerance } from '../user/hooks'
 import { computeSlippageAdjustedAmounts } from '../../utils/prices'
 import { useTranslation } from 'react-i18next'
+import { TOKEN_SAFE, TOKEN_USDT } from '../../constants/src20tokens'
+import { selectList } from '../lists/actions'
+import { setTimeout } from 'timers'
 
 export function useSwapState(): AppState['swap'] {
   return useSelector<AppState, AppState['swap']>(state => state.swap)
@@ -116,10 +119,10 @@ export function useDerivedSwapInfo(): {
   inputError?: string
   v1Trade: Trade | undefined
 } {
-  const { account } = useActiveWeb3React()
+  const { account,chainId } = useActiveWeb3React()
   const { t } = useTranslation()
   const toggledVersion = useToggledVersion()
-
+  const dispatch = useDispatch<AppDispatch>()
   const {
     independentField,
     typedValue,
@@ -127,9 +130,29 @@ export function useDerivedSwapInfo(): {
     [Field.OUTPUT]: { currencyId: outputCurrencyId },
     recipient
   } = useSwapState()
+  const { onCurrencySelection } = useSwapActionHandlers()
 
-  const inputCurrency = useCurrency(inputCurrencyId)
-  const outputCurrency = useCurrency(outputCurrencyId)
+  const [defaultInputCurrency, defaultOutputCurrency] = [
+    useCurrency(TOKEN_USDT[chainId]?.address),
+    useCurrency(TOKEN_SAFE[chainId]?.address)
+  ]
+
+  // const inputCurrency = useCurrency(
+  //             (inputCurrencyId == 'ETH' && outputCurrencyId) ? inputCurrencyId :
+  //             chainId ? TOKEN_USDT[chainId]?.address : '');
+  // const outputCurrency = useCurrency(outputCurrencyId ? outputCurrencyId : chainId ? TOKEN_SAFE[chainId]?.address : '');
+  // const inputCurrency = _inputCurrency ? _inputCurrency : defaultInputCurrency;
+  // const outputCurrency = _outputCurrency ? _outputCurrency : defaultOutputCurrency;
+
+  const inputCurrency = useCurrency(inputCurrencyId);
+  const outputCurrency = useCurrency(outputCurrencyId);
+  useEffect( () => {
+    if ( !outputCurrencyId ){
+      onCurrencySelection(Field.INPUT, defaultInputCurrency);
+      onCurrencySelection(Field.OUTPUT, defaultOutputCurrency);
+    }
+  } , [onCurrencySelection,defaultInputCurrency,defaultOutputCurrency]);
+  
   const recipientLookup = useENS(recipient ?? undefined)
   const to: string | null = (recipient === null ? account : recipientLookup.address) ?? null
 
@@ -286,6 +309,7 @@ export function useDefaultsFromURLSearch():
   const {
     [Field.INPUT]: { currencyId: inputCurrencyId },
     [Field.OUTPUT]: { currencyId: outputCurrencyId },
+    typedValue
   } = useSwapState()
 
   useEffect(() => {
@@ -294,7 +318,7 @@ export function useDefaultsFromURLSearch():
     if ( Object.keys(parsedQs).length != 0 || !inputCurrencyId){
       dispatch(
         replaceSwapState({
-          typedValue: parsed.typedValue,
+          typedValue: parsed.typedValue ? parsed.typedValue : typedValue,
           field: parsed.independentField,
           inputCurrencyId: parsed[Field.INPUT].currencyId,
           outputCurrencyId: parsed[Field.OUTPUT].currencyId,

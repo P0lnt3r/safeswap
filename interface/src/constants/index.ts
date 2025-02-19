@@ -2,10 +2,13 @@ import { ChainId, JSBI, Percent, Token, WETH } from '@uniswap/sdk'
 import { AbstractConnector } from '@web3-react/abstract-connector'
 
 import { fortmatic, injected, portis, walletconnect, walletlink } from '../connectors'
-import { SRC20_TOKENS } from './src20tokens'
+import { SRC20_TOKENS, TOKEN_SAFE, TOKEN_USDT } from './src20tokens'
 
-export const ROUTER_ADDRESS = '0x6476008C612dF9F8Db166844fFE39D24aEa12271'
-export const ONEINCH_ROUTER_ADDRESS = '0x1111111254fb6c44bac0bed2854e76f90643097d';
+// SafeswapRouterV2
+export const ROUTER_ADDRESS = '0x6476008C612dF9F8Db166844fFE39D24aEa12271';
+
+export const ONEINCH_ROUTER_ADDRESS              = '0x1111111254fb6c44bac0bed2854e76f90643097d';
+// export const SAFESWAP_AGGRIGATION_ROUTER_ADDRESS = "0xd4557eb828b3e27444606c387bc0352be26cbe0a";
 
 // a list of tokens by chain
 type ChainTokenList = {
@@ -48,7 +51,7 @@ export const CUSTOM_BASES: { [chainId in ChainId]?: { [tokenAddress: string]: To
 // used for display in the default list when adding liquidity
 export const SUGGESTED_BASES: ChainTokenList = {
   ...WETH_ONLY,
-  [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], ...SRC20_TOKENS[ChainId.MAINNET],DAI, USDC, USDT],
+  [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], ...SRC20_TOKENS[ChainId.MAINNET], USDC, USDT],
   [ChainId.ROPSTEN]: [...WETH_ONLY[ChainId.ROPSTEN], ...SRC20_TOKENS[ChainId.ROPSTEN] ],
   [ChainId.BSC_TEST]: [...WETH_ONLY[ChainId.BSC_TEST], ...SRC20_TOKENS[ChainId.BSC_TEST] ],
   [ChainId.BSC]: [...WETH_ONLY[ChainId.BSC], ...SRC20_TOKENS[ChainId.BSC] ]
@@ -57,17 +60,22 @@ export const SUGGESTED_BASES: ChainTokenList = {
 // used to construct the list of all pairs we consider by default in the frontend
 export const BASES_TO_TRACK_LIQUIDITY_FOR: ChainTokenList = {
   ...WETH_ONLY,
-  [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, USDC, USDT]
+  [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], USDC, USDT],
 }
 
 export const PINNED_PAIRS: { readonly [chainId in ChainId]?: [Token, Token][] } = {
   [ChainId.MAINNET]: [
-    [
-      new Token(ChainId.MAINNET, '0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643', 8, 'cDAI', 'Compound Dai'),
-      new Token(ChainId.MAINNET, '0x39AA39c021dfbaE8faC545936693aC917d5E7563', 8, 'cUSDC', 'Compound USD Coin')
-    ],
+    // [
+    //   new Token(ChainId.MAINNET, '0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643', 8, 'cDAI', 'Compound Dai'),
+    //   new Token(ChainId.MAINNET, '0x39AA39c021dfbaE8faC545936693aC917d5E7563', 8, 'cUSDC', 'Compound USD Coin')
+    // ],
     [USDC, USDT],
-    [DAI, USDT]
+    [DAI, USDT],
+    [TOKEN_SAFE[ChainId.MAINNET],TOKEN_USDT[ChainId.MAINNET]]
+  ],
+  
+  [ChainId.BSC]:[
+    [TOKEN_SAFE[ChainId.BSC],TOKEN_USDT[ChainId.BSC]]
   ]
 }
 

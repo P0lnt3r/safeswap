@@ -3,6 +3,7 @@ import { useCallback, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { useActiveWeb3React } from '../../hooks'
+import { useBlockNumber } from '../application/hooks'
 import { AppDispatch, AppState } from '../index'
 import { addTransaction } from './actions'
 import { TransactionDetails } from './reducer'
@@ -53,19 +54,29 @@ export function useIsTransactionPending(transactionHash?: string): boolean {
 // returns whether a token has a pending approval transaction
 export function useHasPendingApproval(tokenAddress: string | undefined, spender: string | undefined): boolean {
   const allTransactions = useAllTransactions()
+  const latestBlockNumber = useBlockNumber();
   return useMemo(
     () =>
       typeof tokenAddress === 'string' &&
       typeof spender === 'string' &&
       Object.keys(allTransactions).some(hash => {
-        if (allTransactions[hash]?.receipt) {
-          return false
-        } else {
-          return (
-            allTransactions[hash]?.approval?.tokenAddress === tokenAddress &&
-            allTransactions[hash]?.approval?.spender === spender
-          )
+        // if (allTransactions[hash]?.receipt) {
+        //   return false
+        // } else {
+        //   return (
+        //     allTransactions[hash]?.approval?.tokenAddress === tokenAddress &&
+        //     allTransactions[hash]?.approval?.spender === spender
+        //   )
+        // }
+
+        if ( allTransactions[hash]?.approval?.tokenAddress === tokenAddress && allTransactions[hash]?.approval?.spender === spender ){
+          let blockNumber = allTransactions[hash]?.receipt?.blockNumber;
+          if ( blockNumber && latestBlockNumber ){
+            return blockNumber > latestBlockNumber + 8;
+          }else return true;
         }
+        return false;
+
       }),
     [allTransactions, spender, tokenAddress]
   )

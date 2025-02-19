@@ -192,6 +192,10 @@ export function useMintActionHandlers(
     [dispatch, noLiquidity]
   )
 
+  console.log('# useMintActionHandlers # : ' , {
+    onFieldAInput,
+    onFieldBInput
+  });
   return {
     onFieldAInput,
     onFieldBInput

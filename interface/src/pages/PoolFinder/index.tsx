@@ -1,4 +1,4 @@
-import { Currency, ETHER, JSBI, TokenAmount } from '@uniswap/sdk'
+import { Currency, ETHER, JSBI, TokenAmount, Token } from '@uniswap/sdk'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Plus } from 'react-feather'
 import { Text } from 'rebass'
@@ -13,6 +13,7 @@ import CurrencySearchModal from '../../components/SearchModal/CurrencySearchModa
 import { PairState, usePair } from '../../data/Reserves'
 import { useActiveWeb3React } from '../../hooks'
 import { usePairAdder } from '../../state/user/hooks'
+import { useDerivedSwapInfo } from '../../state/swap/hooks'
 import { useTokenBalance } from '../../state/wallet/hooks'
 import { StyledInternalLink } from '../../theme'
 import { currencyId } from '../../utils/currencyId'
@@ -32,16 +33,26 @@ export default function PoolFinder() {
   const [showSearch, setShowSearch] = useState<boolean>(false)
   const [activeField, setActiveField] = useState<number>(Fields.TOKEN1)
 
-  const [currency0, setCurrency0] = useState<Currency | null>(ETHER)
+  const [currency0, setCurrency0] = useState<Currency | null>(null)
   const [currency1, setCurrency1] = useState<Currency | null>(null)
+
+  const { currencies } = useDerivedSwapInfo();
+  const token0 = currencies.INPUT as Token ;
+  const token1 = currencies.OUTPUT as Token;
 
   const [pairState, pair] = usePair(currency0 ?? undefined, currency1 ?? undefined)
   const addPair = usePairAdder()
   useEffect(() => {
+    if ( token0 && !currency0 ){
+      setCurrency0(token0)
+    }
+    if ( token1 && !currency1 ){
+      setCurrency1(token1)
+    }
     if (pair) {
       addPair(pair)
     }
-  }, [pair, addPair])
+  }, [pair, addPair,currencies])
 
   const validPairNoLiquidity: boolean =
     pairState === PairState.NOT_EXISTS ||

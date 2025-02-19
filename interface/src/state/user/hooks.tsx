@@ -1,11 +1,11 @@
 import { ChainId, Pair, Token } from '@uniswap/sdk'
-import flatMap from 'lodash.flatmap'
+// import flatMap from 'lodash.flatmap'
 import { useCallback, useMemo } from 'react'
 import { shallowEqual, useDispatch, useSelector } from 'react-redux'
-import { BASES_TO_TRACK_LIQUIDITY_FOR, PINNED_PAIRS } from '../../constants'
+import { PINNED_PAIRS } from '../../constants'
 
 import { useActiveWeb3React } from '../../hooks'
-import { useAllTokens } from '../../hooks/Tokens'
+// import { useAllTokens } from '../../hooks/Tokens'
 import { AppDispatch, AppState } from '../index'
 import {
   addSerializedPair,
@@ -174,39 +174,37 @@ export function toV2LiquidityToken([tokenA, tokenB]: [Token, Token]): Token {
  */
 export function useTrackedTokenPairs(): [Token, Token][] {
   const { chainId } = useActiveWeb3React()
-  const tokens = useAllTokens()
-
+  // const tokens = useAllTokens()
+  // console.log('# useTrackedTokenPairs # - tokens:',tokens);
   // pinned pairs
   const pinnedPairs = useMemo(() => (chainId ? PINNED_PAIRS[chainId] ?? [] : []), [chainId])
-
   // pairs for every token against every base
-  const generatedPairs: [Token, Token][] = useMemo(
-    () =>
-      chainId
-        ? flatMap(Object.keys(tokens), tokenAddress => {
-            const token = tokens[tokenAddress]
-            // for each token on the current chain,
-            return (
-              // loop though all bases on the current chain
-              (BASES_TO_TRACK_LIQUIDITY_FOR[chainId] ?? [])
-                // to construct pairs of the given token with each base
-                .map(base => {
-                  if (base.address === token.address) {
-                    return null
-                  } else {
-                    return [base, token]
-                  }
-                })
-                .filter((p): p is [Token, Token] => p !== null)
-            )
-          })
-        : [],
-    [tokens, chainId]
-  )
+  // const generatedPairs: [Token, Token][] = useMemo(
+  //   () =>
+  //     chainId
+  //       ? flatMap(Object.keys(tokens), tokenAddress => {
+  //           const token = tokens[tokenAddress]
+  //           // for each token on the current chain,
+  //           return (
+  //             // loop though all bases on the current chain
+  //             (BASES_TO_TRACK_LIQUIDITY_FOR[chainId] ?? [])
+  //               // to construct pairs of the given token with each base
+  //               .map(base => {
+  //                 if (base.address === token.address) {
+  //                   return null
+  //                 } else {
+  //                   return [base, token]
+  //                 }
+  //               })
+  //               .filter((p): p is [Token, Token] => p !== null)
+  //           )
+  //         })
+  //       : [],
+  //   [tokens, chainId]
+  // )
 
   // pairs saved by users
   const savedSerializedPairs = useSelector<AppState, AppState['user']['pairs']>(({ user: { pairs } }) => pairs)
-
   const userPairs: [Token, Token][] = useMemo(() => {
     if (!chainId || !savedSerializedPairs) return []
     const forChain = savedSerializedPairs[chainId]
@@ -217,12 +215,15 @@ export function useTrackedTokenPairs(): [Token, Token][] {
     })
   }, [savedSerializedPairs, chainId])
 
-  const combinedList = useMemo(() => userPairs.concat(generatedPairs).concat(pinnedPairs), [
-    generatedPairs,
+  // const combinedList = useMemo(() => userPairs.concat(generatedPairs).concat(pinnedPairs), [
+  //   generatedPairs,
+  //   pinnedPairs,
+  //   userPairs
+  // ])
+  const combinedList = useMemo(() => userPairs.concat(pinnedPairs), [
     pinnedPairs,
     userPairs
   ])
-
   return useMemo(() => {
     // dedupes pairs of tokens in the combined list
     const keyed = combinedList.reduce<{ [key: string]: [Token, Token] }>((memo, [tokenA, tokenB]) => {

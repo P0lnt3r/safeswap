@@ -22,6 +22,10 @@ import SortButton from './SortButton'
 import { useTokenComparator } from './sorting'
 import { PaddedColumn, SearchInput, Separator } from './styleds'
 import AutoSizer from 'react-virtualized-auto-sizer'
+import { useDispatch, useSelector } from 'react-redux'
+import { AppDispatch, AppState } from '../../state'
+import useIsWindowVisible from '../../hooks/useIsWindowVisible'
+import { useFetchListCallback } from '../../hooks/useFetchListCallback'
 
 
 interface CurrencySearchProps {
@@ -44,7 +48,7 @@ export function CurrencySearch({
   onChangeList
 }: CurrencySearchProps) {
   const { t } = useTranslation()
-  const { chainId } = useActiveWeb3React()
+  const { chainId,library } = useActiveWeb3React()
   const theme = useContext(ThemeContext)
 
   const fixedList = useRef<FixedSizeList>()
@@ -55,6 +59,19 @@ export function CurrencySearch({
   // if they input an address, use it
   const isAddressSearch = isAddress(searchQuery)
   const searchToken = useToken(searchQuery)
+
+  const dispatch = useDispatch<AppDispatch>()
+  const lists = useSelector<AppState, AppState['lists']['byUrl']>(state => state.lists.byUrl)
+  const fetchList = useFetchListCallback()
+  // whenever a list is not loaded and not loading, try again to load it
+  useEffect(() => {
+    Object.keys(lists).forEach(listUrl => {
+      const list = lists[listUrl]
+      if (!list.current && !list.loadingRequestId && !list.error) {
+        fetchList(listUrl).catch( error => console.debug('list added fetching error'))
+      }
+    })
+  }, [dispatch, fetchList, library, lists])
 
   useEffect(() => {
     if (isAddressSearch) {
@@ -204,7 +221,7 @@ export function CurrencySearch({
             onClick={onChangeList}
             id="currency-search-change-list-button"
           >
-            {selectedListInfo.current ? t('change') : t('selectList')}
+            {selectedListInfo.current ? t('change') : '加载中...'}
           </LinkStyledButton>
         </RowBetween>
       </Card>

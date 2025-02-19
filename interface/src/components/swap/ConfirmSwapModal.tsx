@@ -105,7 +105,7 @@ export default function ConfirmSwapModal({
 
   const { currencies } = useDerivedSwapInfo();
   // text to show while loading
-  const pendingText = trade ?  
+  const pendingText = ( trade && !outputTokenAmount ) ?  
                               `${t('swapfor')} ${trade?.inputAmount?.toSignificant(6)} ${trade?.inputAmount?.currency?.symbol} 
                                 ${t('swapfor2')} ${trade?.outputAmount?.toSignificant(6)} ${trade?.outputAmount?.currency?.symbol}`
                             : `${t('swapfor')} ${parsedAmounts[Field.INPUT]?.toSignificant(6)} ${currencies[Field.INPUT]?.symbol}

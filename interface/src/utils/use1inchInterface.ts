@@ -1,4 +1,4 @@
-import { Currency, Token, CurrencyAmount, ChainId, TokenAmount } from "@uniswap/sdk";
+import { Currency, Token, CurrencyAmount, ChainId, TokenAmount,ETHER } from "@uniswap/sdk";
 import { useEffect, useMemo, useState } from "react";
 import { useActiveWeb3React } from "../hooks";
 import { Field } from '../state/swap/actions'
@@ -30,10 +30,11 @@ export default function use1inchInterface(
         return inputCurrencyAmount?.toExact();
     } , [inputCurrencyAmount] );
 
+    const inputToken:Token = <Token>currencies.INPUT;
+    const outputToken:Token = <Token>currencies.OUTPUT;
+
     async function fetch1inch(){
         
-        const inputToken:Token = <Token>currencies.INPUT;
-        const outputToken:Token = <Token>currencies.OUTPUT;
         if ( !currencies.OUTPUT ){
             setOutputTokenAmount(null)
             return;
@@ -45,8 +46,8 @@ export default function use1inchInterface(
             console.warn("非以太坊主网或BSC主网，不可访问1inch进行聚合交易");
             return;
         }
-        let fromTokenAddress  = inputToken.address;   
-        let toTokenAddress    = outputToken.address;   
+        let fromTokenAddress  = ETHER == inputToken ? "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" : inputToken.address;   
+        let toTokenAddress    = ETHER == outputToken? "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" : outputToken.address;   
         let amount = inputAmount;
 
         const url = `https://pathfinder.1inch.io/v1.2/chain/${chainId}/router/v4/quotes-by-presets?chainId=${chainId}&fromTokenAddress=${fromTokenAddress}&toTokenAddress=${toTokenAddress}&gasPrice=20000000000&amount=${amount}&walletAddress=&maxReturnProtocols=${maxReturnProtocols}`;
@@ -68,7 +69,7 @@ export default function use1inchInterface(
     }   
     useEffect( () => {
         fetch1inch();
-    } , [formatInput,chainId] );    
+    } , [formatInput,chainId,outputToken,inputToken] );    
 
     return {
         outputTokenAmount

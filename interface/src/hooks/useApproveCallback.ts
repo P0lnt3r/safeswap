@@ -39,6 +39,8 @@ export function useApproveCallback(
     if (!currentAllowance) return ApprovalState.UNKNOWN
 
     // amountToApprove will be defined if currentAllowance is
+    // console.log('# useApproveCallback # - pendingApproval',pendingApproval);
+    // console.log('# useApproveCallback # - currentAllowance',currentAllowance.currency.name,currentAllowance.toExact());
     return currentAllowance.lessThan(amountToApprove)
       ? pendingApproval
         ? ApprovalState.PENDING

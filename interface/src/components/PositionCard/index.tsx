@@ -47,8 +47,12 @@ export function MinimalPositionCard({ pair, showUnwrapped = false, border }: Pos
 
   const [showMore, setShowMore] = useState(false)
 
+  console.log('# useTokenBalance # - pair.liquidityToken : ' , pair.liquidityToken);
   const userPoolBalance = useTokenBalance(account, pair.liquidityToken)
+  console.log('# useTokenBalance # - userPoolBalance : ' , userPoolBalance?.toExact());
+
   const totalPoolTokens = useTotalSupply(pair.liquidityToken)
+  console.log('# totalSupply:' , totalPoolTokens?.toExact());
 
   const [token0Deposited, token1Deposited] =
     !!pair &&

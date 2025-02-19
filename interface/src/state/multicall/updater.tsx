@@ -30,6 +30,7 @@ async function fetchChunk(
   chunk: Call[],
   minBlockNumber: number
 ): Promise<{ results: string[]; blockNumber: number }> {
+  
   let resultsBlockNumber, returnData
   try {
     ;[resultsBlockNumber, returnData] = await multicallContract.aggregate(chunk.map(obj => [obj.address, obj.callData]))
@@ -37,7 +38,8 @@ async function fetchChunk(
     console.debug('Failed to fetch chunk inside retry', error)
     throw error
   }
-  if (resultsBlockNumber.toNumber() < minBlockNumber) {
+  console.log('# fetchChunk # - chunk:%o | for blockNumber:%d >= Latest:%d ?? ',chunk , resultsBlockNumber.toNumber(),minBlockNumber, resultsBlockNumber.toNumber() >= minBlockNumber);
+  if (resultsBlockNumber.toNumber() < minBlockNumber ) {
     console.debug(`Fetched results for old block number: ${resultsBlockNumber.toString()} vs. ${minBlockNumber}`)
     throw new RetryableError('Fetched for old block number')
   }
@@ -124,7 +126,7 @@ export default function Updater() {
   }, [debouncedListeners, chainId])
 
   const unserializedOutdatedCallKeys = useMemo(() => {
-    return outdatedListeningKeys(state.callResults, listeningKeys, chainId, latestBlockNumber)
+    return outdatedListeningKeys(state.callResults, listeningKeys, chainId, latestBlockNumber + 5)
   }, [chainId, state.callResults, listeningKeys, latestBlockNumber])
 
   const serializedOutdatedCallKeys = useMemo(() => JSON.stringify(unserializedOutdatedCallKeys.sort()), [
@@ -157,7 +159,7 @@ export default function Updater() {
       cancellations: chunkedCalls.map((chunk, index) => {
         const { cancel, promise } = retry(() => fetchChunk(multicallContract, chunk, latestBlockNumber), {
           n: Infinity,
-          minWait: 2500,
+          minWait: 500,
           maxWait: 3500
         })
         promise
